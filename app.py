@@ -1,22 +1,25 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import os
 import requests
 
 app = Flask(__name__)
 
-# Set your API keys (You should use environment variables in production)
-ZOOCAD_API_KEY = "your_zoocad_api_key"
-KITTYCAD_API_KEY = "your_kittycad_api_key"
-
 OUTPUT_FILE = "static/generated_model.glb"
 
-def generate_3d_model(api_key, text_prompt):
-    """ Call the ZOOCAD or KITTYCAD API to generate a 3D model from text. """
+def text_to_3d(api_key, text_prompt, api_choice):
+    """ Calls the selected API (ZOOCAD or KITTYCAD) to generate a 3D model from text. """
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     data = {"prompt": text_prompt}
 
-    response = requests.post("https://api.zoo.dev/generate-3d", headers=headers, json=data)
-    
+    if api_choice == "zoocad":
+        url = "https://api.zoo.dev/v1/generate-3d"
+    elif api_choice == "kittycad":
+        url = "https://api.kittycad.io/v1/models/generate"
+    else:
+        return None
+
+    response = requests.post(url, headers=headers, json=data)
+
     if response.status_code == 200:
         model_url = response.json().get("model_url")
         model_data = requests.get(model_url)
@@ -26,6 +29,7 @@ def generate_3d_model(api_key, text_prompt):
 
         return OUTPUT_FILE
     else:
+        print("API ERROR:", response.status_code, response.text)  # Debugging
         return None
 
 @app.route("/", methods=["GET", "POST"])
@@ -33,15 +37,12 @@ def index():
     if request.method == "POST":
         text_prompt = request.form.get("text_prompt")
         api_choice = request.form.get("api_choice")
+        api_key = request.form.get("api_key")  # Manually entered API key
 
-        if api_choice == "zoocad":
-            api_key = ZOOCAD_API_KEY
-        elif api_choice == "kittycad":
-            api_key = KITTYCAD_API_KEY
-        else:
-            return jsonify({"error": "Invalid API choice"})
+        if not api_key:
+            return jsonify({"error": "API key is required"}), 400
 
-        model_file = generate_3d_model(api_key, text_prompt)
+        model_file = text_to_3d(api_key, text_prompt, api_choice)
 
         if model_file:
             return jsonify({"download_url": model_file})
