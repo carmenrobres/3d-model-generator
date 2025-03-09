@@ -1,3 +1,9 @@
+from flask import Flask, render_template, request, jsonify, send_file
+import requests
+
+app = Flask(__name__)
+
+
 def text_to_3d(api_key, text_prompt, api_choice):
     """ Calls the selected API (ZOOCAD or KITTYCAD) to generate a 3D model from text. """
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
