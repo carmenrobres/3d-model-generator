@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Generate 3D Models from Text</h1>
+    <form id="generateForm">
+        <label for="text_prompt">Enter Text:</label>
+        <input type="text" id="text_prompt" name="text_prompt" required>
+
+        <label for="api_choice">Choose API:</label>
+        <select id="api_choice" name="api_choice">
+            <option value="zoocad">ZOOCAD</option>
+            <option value="kittycad">KITTYCAD</option>
+        </select>
+
+        <button type="submit">Generate</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById("generateForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+
+            fetch("/", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.download_url) {
+                    document.getElementById("result").innerHTML = 
+                        `<a href="${data.download_url}" download>Download Model</a>`;
+                } else {
+                    document.getElementById("result").innerHTML = 
+                        `<p>Error: ${data.error}</p>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
